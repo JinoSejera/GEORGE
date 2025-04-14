@@ -1,0 +1,30 @@
+{
+    "schema": 1,
+    "description":"Answer User Questions",
+    "execution_settings":{
+        "default":{
+            "max_tokens":500,
+            "temperature":0.5,
+            "top_p":0.5,
+            "presence_penalty":0.0,
+            "frequency_penalty":0.0
+        }
+    },
+    "input_variables": [
+        {
+            "name":"query",
+            "description":"user question or ask.",
+            "default":""
+        },
+        {
+            "name":"history",
+            "description":"conversation history",
+            "default":""
+        },
+        {
+            "name":"knowledge_base",
+            "description":"data pulled from knowledge base.",
+            "default":""
+        }
+    ]
+}
