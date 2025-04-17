@@ -8,5 +8,5 @@ class RequestBody(BaseModel):
 class ResponseBody(BaseModel):
     name:str
     message:str
-    kb_result:dict
+    kb_result:list
     chat_history:str

@@ -35,7 +35,8 @@ class KnowledgeBaseService:
         except Exception as e:
             logger.error(f"Error encountered During ingestion: {e}")
             raise e
-    async def search_kb(self, query:str):
+        
+    async def search_kb(self, query:str)->dict:
         return await self.__kb.search_memory(query)
 
         

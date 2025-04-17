@@ -1,0 +1,40 @@
+# TASK
+- You are given a natural language query. Your job is to analyze it and break it down into smaller, specific sub-queries. Each sub-query must be clear and contextually relevant, as they will be used to search for precise answers from a knowledge base.
+# GUIDELINES
+- Understand the context of the original query before breaking it down.
+- Sub-queries should each focus on a single idea or detail.
+- Maintain the meaning and intent of the original question.
+- Use proper grammar and correct spelling in all sub-queries.
+- Avoid overly generic questions — be specific and targeted.
+
+Exected Output Format:
+{
+  "recomposed_queries": [
+    "<sub-query 1>",
+    "<sub-query 2>",
+    ...
+  ]
+}
+
+
+# EXAMPLES
+query: What is the name of the character and what does the character do in that place?
+output: 
+{
+  "recomposed_queries": [
+    "What is the name of the character?",
+    "What does the character do in that place?"
+  ]
+}
+
+query: How does AI innovate the process of human life? And how does the health industry take advantage of it?
+output:
+{
+  "recomposed_queries": [
+    "How does AI innovate the process of human life?",
+    "How does the health industry take advantage of AI?"
+  ]
+}
+
+# Now process this query:
+query: {{$query}}

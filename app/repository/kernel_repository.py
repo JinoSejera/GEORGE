@@ -39,6 +39,7 @@ class KernelRepository:
         # load plugins
         self.__kernel.add_plugin(ConversationSummaryPlugin(prompt_template_config=get_conversation_summarizer_config()),"summarizer")
         self.__orchestrator = self.__kernel.add_plugin(parent_directory=plugin_dir, plugin_name="GeorgeQAPlugin")
+        self.__query_plugin = self.__kernel.add_plugin(parent_directory=plugin_dir, plugin_name="QueryStructuringPlugin")
         
         
         logger.info(self.__kernel.plugins)
@@ -51,7 +52,7 @@ class KernelRepository:
     def get_embedding_service(self)->AzureTextEmbedding:
         return self.__embedding_service
     
-    async def ask(self, query: str, chat_history: ChatHistory, kb_result:dict):
+    async def ask(self, query: str, chat_history: ChatHistory, kb_result:list[dict]):
         """
         Ask a question to the kernel and get the response.
         """
@@ -61,3 +62,15 @@ class KernelRepository:
             return str(result)
         except Exception as e:
             raise e
+        
+    async def recompose_query(self, query: str):
+        """
+        Ask a question to the kernel and get the response.
+        """
+        try:
+            result = await self.__kernel.invoke(self.__query_plugin['RecomposeQuery'], KernelArguments(query=query))
+            
+            return str(result)
+        except Exception as e:
+            raise e
+    

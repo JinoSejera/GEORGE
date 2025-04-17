@@ -74,7 +74,7 @@ class KnowledgeBaseRepository:
                                              text=metadata.content,
                                              additional_metadata=json.dumps(additional_metadata))
     
-    async def search_memory(self, query:str):
+    async def search_memory(self, query:str)->dict:
         result = await self.__memory.search(collection=INDEX_NAME,query=query,min_relevance_score=0.6)
         if(len(result) !=0 ):
             metadata:dict = json.loads(result[0].additional_metadata)

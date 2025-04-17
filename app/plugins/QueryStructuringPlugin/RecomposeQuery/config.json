@@ -1,0 +1,20 @@
+{
+    "schema": 1,
+    "description":"Re-compose the query into more structured one.",
+    "execution_settings":{
+        "default":{
+            "max_tokens":500,
+            "temperature":0.5,
+            "top_p":0.5,
+            "presence_penalty":0.0,
+            "frequency_penalty":0.0
+        }
+    },
+    "input_variables": [
+        {
+            "name":"query",
+            "description":"user question or ask.",
+            "default":""
+        }
+    ]
+}
