@@ -1,15 +1,16 @@
 import logging
 import asyncio
-from ..utils.transcripts import TRANSCRIPTS
 
-from ..repository.knowledge_base_repository import KnowledgeBaseRepository
 from ..models.knowledge_base_model import PodCastKnowledgeBaseModel
+from ..utils.transcripts import TRANSCRIPTS
+from ..contract.memory_repository_base import MemoryRepositoryBase
 
 logger = logging.getLogger(__name__)
 max_concurrency = 5
 
 class KnowledgeBaseService:
-    def __init__(self, kb: KnowledgeBaseRepository):
+    __kb: "MemoryRepositoryBase"
+    def __init__(self, kb: MemoryRepositoryBase):
         self.__kb = kb
         self.__semaphore = asyncio.Semaphore(max_concurrency)
         
@@ -36,7 +37,7 @@ class KnowledgeBaseService:
             logger.error(f"Error encountered During ingestion: {e}")
             raise e
         
-    async def search_kb(self, query:str)->dict:
+    async def search_kb(self, query:str):
         return await self.__kb.search_memory(query)
 
         

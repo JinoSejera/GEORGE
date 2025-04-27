@@ -1,6 +1,6 @@
 {
     "schema": 1,
-    "description":"Re-compose the query into more structured one.",
+    "description":"Breaking Down Query into Sub-Queries",
     "execution_settings":{
         "default":{
             "max_tokens":500,
@@ -14,6 +14,11 @@
         {
             "name":"query",
             "description":"user question or ask.",
+            "default":""
+        },
+        {
+            "name":"history",
+            "description":"conversation history.",
             "default":""
         }
     ]

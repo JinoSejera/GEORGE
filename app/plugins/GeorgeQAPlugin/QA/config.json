@@ -23,7 +23,12 @@
         },
         {
             "name":"knowledge_base",
-            "description":"data pulled from knowledge base.",
+            "description":"Retrieved related JSON-formatted memory from the Knowledge Base based on the user's query.",
+            "default":""
+        },
+        {
+            "name":"web_search",
+            "description":"Retrieved JSON-formatted web search results based on the user's query.",
             "default":""
         }
     ]

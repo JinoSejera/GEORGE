@@ -3,3 +3,4 @@ fastapi==0.115.12
 slowapi==0.1.9
 uvicorn==0.34.1
 azure-search-documents==11.5.2
+serpapi==0.1.5

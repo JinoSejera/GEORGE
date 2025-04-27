@@ -24,7 +24,8 @@ def get_conversation_summarizer_config()->PromptTemplateConfig:
                                                  temperature=0.1,
                                                  top_p=0.5
                                                  )
-    return PromptTemplateConfig(template=ConversationSummaryPlugin._summarize_conversation_prompt_template,
+    return PromptTemplateConfig(name="summarizer",
+                                template=ConversationSummaryPlugin._summarize_conversation_prompt_template,
                                 description="Given as section of a conversation transcript, summarize the part of the conversation.",
-                                execution_settings=execution_settings
+                                execution_settings={"default":execution_settings}
                                 )
