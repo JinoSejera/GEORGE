@@ -4,7 +4,7 @@ import logging
 import re
 import json
 
-from serpapi import BingSearch
+import serpapi
 from .connector import SearchConnectorBase
 from semantic_kernel.exceptions import ServiceInvalidRequestError
 
@@ -14,7 +14,7 @@ class BingSerApiConnector(SearchConnectorBase):
     """A Search engine connector that uses Serpapi to perform a Bing web search."""
     
     __api_key: str
-    
+    # __client: serpapi.Client
     def __init__(self, api_key:str | None = None) -> None:
         """_summary_
 
@@ -27,6 +27,8 @@ class BingSerApiConnector(SearchConnectorBase):
             self.__api_key = os.getenv("SERPAPI_API_KEY") or (lambda:(_ for _ in ()).throw(ValueError("SERPAPI_API_KEY is not set")))()
         else:
             self.__api_key = api_key
+            
+        # self.__client = serpapi.Client(api_key=self.__api_key)
         
     async def search(self, query: str, num_results: int = 2) -> dict[str, dict[str, Any]]:
         """Returns the search results of the query provided by pinging the Bing web search API."""
@@ -46,12 +48,12 @@ class BingSerApiConnector(SearchConnectorBase):
         params = {
             "engine": "bing",
             "q": query,
-            "api_key": self.__api_key
+            "api_key": self.__api_key,
         }
         
-        search = BingSearch(params)
-        results = search.get_dict()
-        
+        search_result = serpapi.search(params=params)
+        # results = search.get_dict()
+        # logger.warning(f"search_result: {search_result}")
         references = [
             {
                 "no": index,
@@ -59,12 +61,12 @@ class BingSerApiConnector(SearchConnectorBase):
                 "link": result.get("link"),
                 "snippet": result.get("snippet")
             }
-            for index, result in enumerate(results.get("organic_results", [])[:num_results], start=1) 
+            for index, result in enumerate(search_result.get("organic_results", [])[:num_results], start=1) 
         ]
         
         answer = " ".join(f"{self.__clean_snippet(ref['snippet'])}[{ref['no']}]" for ref in references)
         
-        logger.debug(f"answer: {answer}\nreferences: {references}")
+        # logger.debug(f"answer: {answer}\nreferences: {references}")
         return json.dumps({
             "organic_result": {
                 "answer": answer,
