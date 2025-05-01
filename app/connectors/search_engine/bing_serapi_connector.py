@@ -4,7 +4,7 @@ import logging
 import re
 import json
 
-from serpapi.bing_search import BingSearch
+from serpapi import BingSearch
 from .connector import SearchConnectorBase
 from semantic_kernel.exceptions import ServiceInvalidRequestError
 
