@@ -1,6 +1,6 @@
 {
     "schema": 1,
-    "description":"Answer User Questions",
+    "description":"Answer User Questions using Chat History.",
     "execution_settings":{
         "default":{
             "max_tokens":300,
@@ -17,13 +17,8 @@
             "default":""
         },
         {
-            "name":"knowledge_base",
-            "description":"Retrieved related JSON-formatted memory from the Knowledge Base based on the user's query.",
-            "default":""
-        },
-        {
-            "name":"web_search",
-            "description":"Retrieved JSON-formatted web search results based on the user's query.",
+            "name":"history",
+            "description":"conversation history",
             "default":""
         }
     ]

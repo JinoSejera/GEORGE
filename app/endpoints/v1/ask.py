@@ -3,6 +3,7 @@ import asyncio
 import json
 
 from fastapi import APIRouter, Query, HTTPException, Request, Depends
+from fastapi.responses import StreamingResponse
 from semantic_kernel.contents import ChatHistory, ChatMessageContent
 from semantic_kernel.contents.utils.author_role import AuthorRole
 
@@ -26,8 +27,7 @@ async def ask(
     request:Request,
     request_body:RequestBody,
     george_service: GeorgeQAService = Depends(get_george_ask_service),
-    history: ChatHistoryService = Depends(get_chat_history),
-    kb: KnowledgeBaseService = Depends(get_knowledge_base_service)
+    history: ChatHistoryService = Depends(get_chat_history)
 ):
     try:
         chat_history:ChatHistory = history.load_chat_history(request_body.chat_history) if request_body.chat_history else ChatHistory()
@@ -47,3 +47,22 @@ async def ask(
         logger.error(f"Failed to process query: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to process query: {e}")
 
+@router.post('/ask/stream',tags=[api])
+@limiter.limit("5/hour")
+async def ask_streaming(
+    request:Request,
+    request_body:RequestBody,
+    george_service: GeorgeQAService = Depends(get_george_ask_service),
+    history: ChatHistoryService = Depends(get_chat_history)
+):
+    try:
+        chat_history:ChatHistory = history.load_chat_history(request_body.chat_history) if request_body.chat_history else ChatHistory()
+        
+        return StreamingResponse(
+            content=george_service.ask_streaming_async(request_body.query, chat_history),
+            media_type="text/event-stream"
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to process query: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process query: {e}")

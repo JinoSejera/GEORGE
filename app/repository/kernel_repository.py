@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, Any, Dict
+from typing import AsyncGenerator, Iterable, Optional, Any, Dict
 import logging
 from pathlib import Path
 import json
@@ -6,14 +6,13 @@ import json
 from semantic_kernel import Kernel
 from semantic_kernel.functions import KernelArguments
 from semantic_kernel.contents import ChatHistory
-from semantic_kernel.core_plugins import ConversationSummaryPlugin
+from semantic_kernel.core_plugins import ConversationSummaryPlugin, TimePlugin
 from semantic_kernel.functions.function_result import FunctionResult
+from semantic_kernel.contents.streaming_content_mixin import StreamingContentMixin
 
 from ..utils.singleton_decorator import singleton
 from ..utils.prompt_template_config import Config, get_prompt_template_config
 from ..services.oai_services import get_completion_service, get_embedding_service
-from ..models.knowledge_base_model import PodCastKnowledgeBaseModel
-from ..models.web_search_result_model import WebSearchResult
 from ..contract.kernel_repository_base import KernelRepositoryBase
 current_path = Path(__file__).resolve().parent
 plugin_dir = current_path / "../plugins/"
@@ -39,6 +38,7 @@ class KernelRepository(KernelRepositoryBase):
             )
         
         # load plugins
+        self.__kernel.add_plugin(TimePlugin(), plugin_name="time")
         self.__kernel.add_plugin(ConversationSummaryPlugin(prompt_template_config=get_prompt_template_config(Config.CONVERSATION_SUMMARIZER)),"summarizer")
         self.__orchestrator = self.__kernel.add_plugin(parent_directory=plugin_dir, plugin_name="GeorgeQAPlugin")
         self.__query_plugin = self.__kernel.add_plugin(parent_directory=plugin_dir, plugin_name="QueryStructuringPlugin")
@@ -54,24 +54,20 @@ class KernelRepository(KernelRepositoryBase):
         query: str, 
         chat_history: ChatHistory, 
         kb_results:Iterable[Optional[Dict[str, Any]]] | None, 
-        web_results:Dict[str, Dict[str, Any]] | None) -> str:
+        web_results:Dict[str, Dict[str, Any]] | None,
+        stream:bool = False)->AsyncGenerator[list[StreamingContentMixin] | FunctionResult | list[FunctionResult], Any] | str:
         """
         Ask a question to the kernel and get the response.
         """
         try:
-            args = KernelArguments()
-            args["query"] = query
-            args["history"] = chat_history
-            args["knowledge_base"] = kb_results
-            args["web_search"] = web_results
+            args = KernelArguments(query=query,
+                                   knowledge_base=kb_results,
+                                   web_search=web_results)
+            if stream:
+                return self._ask_stream(args)
             
-            result = await self._ask(args)
-            
-            return str(result)
+            return str(await self._ask(args))
         
-        except UnicodeEncodeError as ue:
-            logger.error(f"Unicode encoding error during JSON serialization: {ue}")
-            raise
         except Exception as e:
             raise e
         
@@ -93,14 +89,33 @@ class KernelRepository(KernelRepositoryBase):
         Regenerate the query based on the conversation history.
         """
         try:
-            args = KernelArguments()
-            args["query"] = query
-            args["history"] = chat_history
-            result = await self._regenerate_query(args)
+            result = await self._regenerate_query(KernelArguments(query=query,
+                                   history=chat_history))
             return str(result)
         except Exception as e:
             raise e
         
+    async def check_history(self, query:str, chat_history: ChatHistory) -> str:
+        """
+        Check the conversation history.
+        """
+        try:
+            args = KernelArguments()
+            args["history"] = chat_history
+            args["query"] = query
+            result = await self._check_history(args)
+            return str(result)
+        except Exception as e:
+            raise e
+    async def _check_history(self, args: KernelArguments) -> FunctionResult:
+        """
+        Check the conversation history.
+        """
+        try:
+            return await self.__kernel.invoke(self.__orchestrator['CheckHistory'], args)
+        except Exception as e:
+            raise e
+    
     async def _regenerate_query(self, args: KernelArguments) -> FunctionResult:
         """
         Regenerate the query based on the conversation history.
@@ -124,5 +139,13 @@ class KernelRepository(KernelRepositoryBase):
         args: "KernelArguments") -> FunctionResult:
         try:
             return await self.__kernel.invoke(self.__orchestrator['QA'],args)
+        except Exception as e:
+            raise e
+
+    def _ask_stream(
+        self, 
+        args: "KernelArguments") -> AsyncGenerator[list["StreamingContentMixin"] | FunctionResult | list[FunctionResult], Any]:
+        try:
+            return self.__kernel.invoke_stream(self.__orchestrator['QA'],args)
         except Exception as e:
             raise e

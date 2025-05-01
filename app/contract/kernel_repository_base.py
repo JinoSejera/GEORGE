@@ -1,11 +1,11 @@
 from abc import abstractmethod, ABC
-from typing import Iterable, Optional, Any, Dict
+from typing import AsyncGenerator, Iterable, Optional, Any, Dict
 
 from semantic_kernel import Kernel
 from semantic_kernel.contents import ChatHistory
+from semantic_kernel.functions.function_result import FunctionResult
+from semantic_kernel.contents.streaming_content_mixin import StreamingContentMixin
 
-from ..models.knowledge_base_model import PodCastKnowledgeBaseModel
-from ..models.web_search_result_model import WebSearchResult
 
 
 class KernelRepositoryBase(ABC):
@@ -15,18 +15,20 @@ class KernelRepositoryBase(ABC):
         Get the kernel instance.
         """
         pass
+    
     @abstractmethod
     async def ask(
         self, 
         query: str, 
         chat_history: ChatHistory, 
         kb_results:Iterable[Optional[Dict[str, Any]]] | None, 
-        web_results:Dict[str, Dict[str, Any]] | None) -> str:
+        web_results:Dict[str, Dict[str, Any]] | None,
+        stream:bool = False) -> AsyncGenerator[list[StreamingContentMixin] | FunctionResult | list[FunctionResult], Any] | str:
         """
         Ask a question to the kernel and get the response.
         """
         pass
-
+    
     @abstractmethod
     async def breakdown_query(self, query:str, chat_history: ChatHistory)->str:
         """
@@ -41,3 +43,9 @@ class KernelRepositoryBase(ABC):
         """
         pass
     
+    @abstractmethod
+    async def check_history(self, query:str, chat_history: ChatHistory) -> str:
+        """
+        Check the conversation history.
+        """
+        pass

@@ -2,6 +2,7 @@
 - You are given a natural language query. Your job is to analyze it and break it down into smaller, specific sub-queries. Each sub-query must be clear and contextually relevant, as they will be used to search for precise answers from a knowledge base.
 
 # GUIDELINES
+- Analyze the conversation history to understand the context of the current query, especially if it is a follow-up question.
 - Understand the context of the original query before breaking it down.
 - Sub-queries should each focus on a single idea or detail.
 - Maintain the meaning and intent of the original question.
@@ -13,7 +14,7 @@
 - The output should not contain any additional text or explanation outside of the JSON format.
 - The output should not include any metadata or comments.
 - The output should be valid JSON and should not contain any trailing commas or syntax errors.
-- You can Utilize the conversation history to understand the context better, but do not include it in the output.
+- You can utilize the conversation history to understand the context better, but do not include it in the output.
 
 Expected Output Format:
 {
