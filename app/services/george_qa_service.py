@@ -57,7 +57,7 @@ class GeorgeQAService:
                 for chunk in result_from_history.split(" "):
                     message_accumulator += f"{chunk} "
                     yield f"{chunk} "
-                    logger.warning(f"Chunk: {chunk}")
+                    # logger.warning(f"Chunk: {chunk}")
                     await asyncio.sleep(0.1)
 
                 chat_history = self._add_to_chat_history(chat_history, query, result_from_history)
@@ -65,18 +65,18 @@ class GeorgeQAService:
                 
                 await asyncio.sleep(0.1)  # ensure async yield
                 yield f"\n<|END_OF_RESPONSE|>\n{json.dumps(final_response)}"
-                logger.warning(f"Final Response - result from history: \n<|END_OF_RESPONSE|>\n{json.dumps(final_response)}")
+                logger.info(f"Final Response - result from history: \n<|END_OF_RESPONSE|>\n{json.dumps(final_response)}")
                 return  # 🚨 Important: do not continue to OpenAI call!
             
             kb_results, web_search_results = await self._get_information_async(query, chat_history)
             
             if not kb_results or len(kb_results) == 0:
                 fallback_message = "I am sorry, but I do not have enough information to answer that."
-                logger.warning(f"Agent Response - info not sufficient: {fallback_message}")
+                logger.info(f"Agent Response - info not sufficient: {fallback_message}")
                 for chunk in fallback_message.split(" "):
                     message_accumulator += f"{chunk} "
                     yield f"{chunk} "
-                    logger.warning(f"Chunk: {chunk}")
+                    # logger.info(f"Chunk: {chunk}")
                     await asyncio.sleep(0.1)
                 
                 # add the user query and assistant response to the chat history
@@ -92,14 +92,14 @@ class GeorgeQAService:
         
             async for chunk in result:
                 message_accumulator += str(chunk[0])
-                logger.warning(f"Chunk: {str(chunk[0])}")
+                # logger.info(f"Chunk: {str(chunk[0])}")
                 yield str(chunk[0])
                 await asyncio.sleep(0.1)
             
             # add the user query and assistant response to the chat history
             # This is done by the ChatHistoryService in the kernel.
             chat_history = self._add_to_chat_history(chat_history, query, message_accumulator)
-            logger.warning(f"Agent Response - using RAG: {message_accumulator}")
+            logger.info(f"Agent Response - using RAG: {message_accumulator}")
             final_response = self._final_response(message_accumulator, kb_results, web_search_results, chat_history)
             # Yield the final JSON string to client
             yield f"\n<|END_OF_RESPONSE|>\n{json.dumps(final_response)}"
