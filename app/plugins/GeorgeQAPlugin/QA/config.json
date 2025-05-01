@@ -1,0 +1,30 @@
+{
+    "schema": 1,
+    "description":"Answer User Questions",
+    "execution_settings":{
+        "default":{
+            "max_tokens":300,
+            "temperature":0.2,
+            "top_p":0.5,
+            "presence_penalty":0.0,
+            "frequency_penalty":0.0
+        }
+    },
+    "input_variables": [
+        {
+            "name":"query",
+            "description":"user question or ask.",
+            "default":""
+        },
+        {
+            "name":"knowledge_base",
+            "description":"Retrieved related JSON-formatted memory from the Knowledge Base based on the user's query.",
+            "default":""
+        },
+        {
+            "name":"web_search",
+            "description":"Retrieved JSON-formatted web search results based on the user's query.",
+            "default":""
+        }
+    ]
+}

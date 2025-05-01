@@ -1,0 +1,25 @@
+{
+    "schema": 1,
+    "description":"Answer User Questions using Chat History.",
+    "execution_settings":{
+        "default":{
+            "max_tokens":300,
+            "temperature":0.2,
+            "top_p":0.5,
+            "presence_penalty":0.0,
+            "frequency_penalty":0.0
+        }
+    },
+    "input_variables": [
+        {
+            "name":"query",
+            "description":"user question or ask.",
+            "default":""
+        },
+        {
+            "name":"history",
+            "description":"conversation history",
+            "default":""
+        }
+    ]
+}

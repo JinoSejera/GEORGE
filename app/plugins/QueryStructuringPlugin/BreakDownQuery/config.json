@@ -1,0 +1,25 @@
+{
+    "schema": 1,
+    "description":"Breaking Down Query into Sub-Queries",
+    "execution_settings":{
+        "default":{
+            "max_tokens":500,
+            "temperature":0.5,
+            "top_p":0.5,
+            "presence_penalty":0.0,
+            "frequency_penalty":0.0
+        }
+    },
+    "input_variables": [
+        {
+            "name":"query",
+            "description":"user question or ask.",
+            "default":""
+        },
+        {
+            "name":"history",
+            "description":"conversation history.",
+            "default":""
+        }
+    ]
+}
