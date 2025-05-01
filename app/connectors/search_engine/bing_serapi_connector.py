@@ -53,7 +53,7 @@ class BingSerApiConnector(SearchConnectorBase):
         
         search_result = serpapi.search(params=params)
         # results = search.get_dict()
-        logger.warning(f"search_result: {search_result}")
+        # logger.warning(f"search_result: {search_result}")
         references = [
             {
                 "no": index,
