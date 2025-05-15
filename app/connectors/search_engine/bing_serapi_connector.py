@@ -54,7 +54,6 @@ class BingSerApiConnector(SearchConnectorBase):
         
         # Perform the search using serpapi
         search_result = serpapi.search(params=params)
-        logger.warning(f"search_result: {search_result}")
         organic_results = search_result.get("organic_results", [])
         references = []
         answer = ""
@@ -66,7 +65,7 @@ class BingSerApiConnector(SearchConnectorBase):
                     "no": index,
                     "title": result.get("title"),
                     "link": result.get("link"),
-                    "snippet": result.get("snippet")
+                    "snippet": result.get("snippet") or ""
                 }
                 for index, result in enumerate(search_result.get("organic_results", [])[:num_results], start=1) 
             ]
@@ -85,4 +84,6 @@ class BingSerApiConnector(SearchConnectorBase):
         """
         Remove reference numbers from snippet text.
         """
+        if not isinstance(snippet, str):
+            return ""
         return re.sub(r"\[\d+\](\s*\.)?", "", snippet).strip()
