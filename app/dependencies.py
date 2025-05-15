@@ -21,10 +21,25 @@ def get_knowledge_base_repository():
 
 # Provides an instance of BingSerApiConnector for dependency injection
 def get_bing_serapi_connector():
+    """
+    Provides an instance of BingSerApiConnector for dependency injection.
+
+    Returns:
+        BingSerApiConnector: The Bing search connector instance.
+    """
     return BingSerApiConnector()
 
 # Provides an instance of KnowledgeBaseService, initialized with a KnowledgeBaseRepository
 def get_knowledge_base_service(kb: KnowledgeBaseRepository = Depends(get_knowledge_base_repository)):
+    """
+    Provides an instance of KnowledgeBaseService, initialized with a KnowledgeBaseRepository.
+
+    Args:
+        kb (KnowledgeBaseRepository): The knowledge base repository.
+
+    Returns:
+        KnowledgeBaseService: The knowledge base service instance.
+    """
     logger.info("Initializing George Knowledge Base Service")
     return KnowledgeBaseService(kb)
 
@@ -32,13 +47,36 @@ def get_knowledge_base_service(kb: KnowledgeBaseRepository = Depends(get_knowled
 def get_george_ask_service(kernel: KernelRepository = Depends(get_kernel_repository),
                            knowledge_base: KnowledgeBaseRepository = Depends(get_knowledge_base_service),
                            search_connector: BingSerApiConnector = Depends(get_bing_serapi_connector)):
+    """
+    Provides an instance of GeorgeQAService, initialized with a KernelRepository, KnowledgeBaseRepository, and BingSerApiConnector.
+
+    Args:
+        kernel (KernelRepository): The kernel repository.
+        knowledge_base (KnowledgeBaseRepository): The knowledge base repository.
+        search_connector (BingSerApiConnector): The Bing search connector.
+
+    Returns:
+        GeorgeQAService: The Q&A service instance.
+    """
     logger.info("Initializing George Q and A Service")
     return GeorgeQAService(kernel,knowledge_base,search_connector)
     
 # Provides an instance of ChatHistoryService for dependency injection
 def get_chat_history():
+    """
+    Provides an instance of ChatHistoryService for dependency injection.
+
+    Returns:
+        ChatHistoryService: The chat history service instance.
+    """
     return ChatHistoryService()
 
 # Provides an instance of KnowledgeBaseService with a new KnowledgeBaseRepository
 def get_memory_service():
+    """
+    Provides an instance of KnowledgeBaseService with a new KnowledgeBaseRepository.
+
+    Returns:
+        KnowledgeBaseService: The knowledge base service instance.
+    """
     return KnowledgeBaseService(KnowledgeBaseRepository())

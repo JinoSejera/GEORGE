@@ -11,6 +11,15 @@ azure_openai_api_version = os.getenv('AZURE_OPENAI_API_VERSION') or (lambda:(_ f
 azure_openai_key = os.getenv('AZURE_OPENAI_API_KEY') or (lambda:(_ for _ in ()).throw(ValueError("AZURE_OPENAI_API_KEY is not set")))()
 
 def get_azure_oai_client():
+    """
+    Create and return an AsyncAzureOpenAI client using environment variables.
+
+    Returns:
+        AsyncAzureOpenAI: The initialized Azure OpenAI async client.
+
+    Raises:
+        Exception: If client creation fails or required environment variables are missing.
+    """
     try:
         # IF USING AZURE AAD AUTHENTICATION
         # from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
@@ -20,9 +29,11 @@ def get_azure_oai_client():
         #             api_version=azure_openai_api_version)
         
         # IF USING AZURE OPENAI KEY AUTHENTICATION
-        __async_client = AsyncAzureOpenAI(azure_endpoint=azure_openai_endpoint,
-                                          api_key=azure_openai_key,
-                                          api_version=azure_openai_api_version)
+        __async_client = AsyncAzureOpenAI(
+            azure_endpoint=azure_openai_endpoint,
+            api_key=azure_openai_key,
+            api_version=azure_openai_api_version
+        )
         logger.info(f"Azure OpenAI client created successfully with endpoint: {azure_openai_endpoint} and API version: {azure_openai_api_version}")
         return __async_client
     except Exception as e:

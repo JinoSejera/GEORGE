@@ -16,10 +16,9 @@ class BingSerApiConnector(SearchConnectorBase):
     __api_key: str
     # __client: serpapi.Client
     def __init__(self, api_key:str | None = None) -> None:
-        """_summary_
-
-        Args:
-            api_key (str | None, optional): The Serpapi API Key,.
+        """
+        Initialize the connector with SerpApi API key.
+        Loads from environment if not provided.
         """
         if not api_key:
             from dotenv import load_dotenv
@@ -30,8 +29,10 @@ class BingSerApiConnector(SearchConnectorBase):
             
         # self.__client = serpapi.Client(api_key=self.__api_key)
         
-    async def search(self, query: str, num_results: int = 2) -> dict[str, dict[str, Any]]:
-        """Returns the search results of the query provided by pinging the Bing web search API."""
+    async def search_async(self, query: str, num_results: int = 2) -> dict[str, dict[str, Any]]:
+        """
+        Returns the search results of the query provided by pinging the Bing web search API.
+        """
         if not query:
             raise ServiceInvalidRequestError("query cannot be 'None' or empty.")
 
@@ -51,28 +52,37 @@ class BingSerApiConnector(SearchConnectorBase):
             "api_key": self.__api_key,
         }
         
+        # Perform the search using serpapi
         search_result = serpapi.search(params=params)
-        # results = search.get_dict()
-        # logger.warning(f"search_result: {search_result}")
-        references = [
-            {
-                "no": index,
-                "title": result.get("title"),
-                "link": result.get("link"),
-                "snippet": result.get("snippet")
-            }
-            for index, result in enumerate(search_result.get("organic_results", [])[:num_results], start=1) 
-        ]
+        logger.warning(f"search_result: {search_result}")
+        organic_results = search_result.get("organic_results", [])
+        references = []
+        answer = ""
+        logger.info(f"organic_results: {organic_results}")
+        if organic_results:
+            # Collect references from organic results
+            references = [
+                {
+                    "no": index,
+                    "title": result.get("title"),
+                    "link": result.get("link"),
+                    "snippet": result.get("snippet")
+                }
+                for index, result in enumerate(search_result.get("organic_results", [])[:num_results], start=1) 
+            ]
         
-        answer = " ".join(f"{self.__clean_snippet(ref['snippet'])}[{ref['no']}]" for ref in references)
-        
-        # logger.debug(f"answer: {answer}\nreferences: {references}")
+            # Build answer string with snippets and reference numbers
+            answer = " ".join(f"{self.__clean_snippet(ref['snippet'])}[{ref['no']}]" for ref in references)
+
         return json.dumps({
             "organic_result": {
-                "answer": answer,
-                "references": references
+                "answer": answer if answer else "No answer found.",
+                "references": references if references else []
             }
         })
         
     def __clean_snippet(self, snippet):
+        """
+        Remove reference numbers from snippet text.
+        """
         return re.sub(r"\[\d+\](\s*\.)?", "", snippet).strip()

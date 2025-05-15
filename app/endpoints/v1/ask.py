@@ -4,16 +4,13 @@ import json
 
 from fastapi import APIRouter, Query, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
-from semantic_kernel.contents import ChatHistory, ChatMessageContent
-from semantic_kernel.contents.utils.author_role import AuthorRole
-
+from semantic_kernel.contents import ChatHistory
 
 from ...models.request_body import RequestBody
 from ...models.response_body import ResponseBody
 from ...services.george_qa_service import GeorgeQAService
-from ...services.knowledge_base_service import KnowledgeBaseService
 from ...services.chat_history_service import ChatHistoryService
-from ...dependencies import get_george_ask_service, get_chat_history, get_knowledge_base_service
+from ...dependencies import get_george_ask_service, get_chat_history
 from ...utils.limiter import limiter
 
 
@@ -29,19 +26,36 @@ async def ask(
     george_service: GeorgeQAService = Depends(get_george_ask_service),
     history: ChatHistoryService = Depends(get_chat_history)
 ):
+    """
+    Handles a Q&A request to George. Processes the query, updates chat history, and returns the response.
+
+    Args:
+        request (Request): The incoming HTTP request.
+        request_body (RequestBody): The request payload containing the query and chat history.
+        george_service (GeorgeQAService): Service for handling Q&A logic.
+        history (ChatHistoryService): Service for managing chat history.
+
+    Returns:
+        ResponseBody: The response containing the answer, chat history, and search results.
+    """
     try:
+        # Load or initialize chat history
         chat_history:ChatHistory = history.load_chat_history(request_body.chat_history) if request_body.chat_history else ChatHistory()
         
+        # Get response and results from the service
         response, kb_results, web_search_results = await george_service.ask_async(request_body.query, chat_history)
         
+        # Update chat history with user and assistant messages
         chat_history.add_user_message(request_body.query)
         chat_history.add_assistant_message(response)
         
-        return ResponseBody(name="George",
-                            message=response, 
-                            chat_history=history.get_chat_history(chat_history), 
-                            kb_results=kb_results, 
-                            web_search_results=web_search_results)
+        return ResponseBody(
+            name="George",
+            message=response, 
+            chat_history=history.get_chat_history(chat_history), 
+            kb_results=kb_results, 
+            web_search_results=web_search_results
+        )
 
     except Exception as e:
         logger.error(f"Failed to process query: {e}")
@@ -55,7 +69,20 @@ async def ask_streaming(
     george_service: GeorgeQAService = Depends(get_george_ask_service),
     history: ChatHistoryService = Depends(get_chat_history)
 ):
+    """
+    Handles a streaming Q&A request to George. Streams the response as server-sent events.
+
+    Args:
+        request (Request): The incoming HTTP request.
+        request_body (RequestBody): The request payload containing the query and chat history.
+        george_service (GeorgeQAService): Service for handling Q&A logic.
+        history (ChatHistoryService): Service for managing chat history.
+
+    Returns:
+        StreamingResponse: The streaming response with the answer.
+    """
     try:
+        # Load or initialize chat history
         chat_history:ChatHistory = history.load_chat_history(request_body.chat_history) if request_body.chat_history else ChatHistory()
         
         return StreamingResponse(

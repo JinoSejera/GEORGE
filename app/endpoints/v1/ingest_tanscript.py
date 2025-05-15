@@ -2,7 +2,6 @@ import logging
 
 from fastapi import APIRouter,HTTPException, Request, Depends
 
-
 from ...services.knowledge_base_service import KnowledgeBaseService
 from ...dependencies import get_knowledge_base_service
 
@@ -14,10 +13,19 @@ router = APIRouter(prefix="/api/v1/ingest")
 async def ingest(
     request:Request,
     kb_service: KnowledgeBaseService = Depends(get_knowledge_base_service),
-    
 ):
+    """
+    Endpoint to ingest transcripts into the knowledge base.
+
+    Args:
+        request (Request): The incoming HTTP request.
+        kb_service (KnowledgeBaseService): Service for ingesting transcripts.
+
+    Returns:
+        dict: Success message and status code.
+    """
     try:
-        await kb_service.ingest_transcripts()
+        await kb_service.ingest_transcripts_async()
         return {
             "message": "Success",
             "status_code": 200
