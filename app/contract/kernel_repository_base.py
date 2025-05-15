@@ -12,40 +12,70 @@ class KernelRepositoryBase(ABC):
     @abstractmethod
     def get_kernel(self)->Kernel:
         """
-        Get the kernel instance.
+        Returns the kernel instance.
         """
         pass
     
     @abstractmethod
-    async def ask(
+    async def ask_async(
         self, 
-        query: str, 
-        chat_history: ChatHistory, 
+        query: str,
         kb_results:Iterable[Optional[Dict[str, Any]]] | None, 
         web_results:Dict[str, Dict[str, Any]] | None,
-        stream:bool = False) -> AsyncGenerator[list[StreamingContentMixin] | FunctionResult | list[FunctionResult], Any] | str:
+        stream:bool = False
+    ) -> AsyncGenerator[list[StreamingContentMixin] | FunctionResult | list[FunctionResult], Any] | str:
         """
-        Ask a question to the kernel and get the response.
-        """
-        pass
-    
-    @abstractmethod
-    async def breakdown_query(self, query:str, chat_history: ChatHistory)->str:
-        """
-        Breaking down query into smaller queries.
-        """
-        pass
-    
-    @abstractmethod
-    async def regenerate_query(self, query:str, chat_history: ChatHistory)->str:
-        """
-        Regenerate the query based on the conversation history.
+        Asynchronously asks a question to the kernel and returns the response.
+
+        Args:
+            query (str): The user query.
+            kb_results (Iterable[Optional[Dict[str, Any]]] | None): Knowledge base results.
+            web_results (Dict[str, Dict[str, Any]] | None): Web search results.
+            stream (bool, optional): Whether to stream the response. Defaults to False.
+
+        Returns:
+            AsyncGenerator or str: The response from the kernel.
         """
         pass
     
     @abstractmethod
-    async def check_history(self, query:str, chat_history: ChatHistory) -> str:
+    async def breakdown_query_async(self, query:str, chat_history: ChatHistory)->str:
         """
-        Check the conversation history.
+        Asynchronously breaks down a query into smaller sub-queries.
+
+        Args:
+            query (str): The user query.
+            chat_history (ChatHistory): The conversation history.
+
+        Returns:
+            str: The breakdown result.
+        """
+        pass
+    
+    @abstractmethod
+    async def regenerate_query_async(self, query:str, chat_history: ChatHistory)->str:
+        """
+        Asynchronously regenerates the query based on the conversation history.
+
+        Args:
+            query (str): The user query.
+            chat_history (ChatHistory): The conversation history.
+
+        Returns:
+            str: The regenerated query.
+        """
+        pass
+    
+    @abstractmethod
+    async def check_history_async(self, query:str, chat_history: ChatHistory) -> str:
+        """
+        Asynchronously checks the conversation history for relevant context.
+
+        Args:
+            query (str): The user query.
+            chat_history (ChatHistory): The conversation history.
+
+        Returns:
+            str: The result of the history check.
         """
         pass

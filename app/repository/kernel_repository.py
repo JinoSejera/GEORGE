@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 @singleton
 class KernelRepository(KernelRepositoryBase):
     """
-    Singleton class to manage the kernel instance.a
+    Singleton class to manage the kernel instance.
     """
     def __init__(self):
         self.__kernel = Kernel()
@@ -49,10 +49,9 @@ class KernelRepository(KernelRepositoryBase):
         """
         return self.__kernel
     
-    async def ask(
+    async def ask_async(
         self, 
-        query: str, 
-        chat_history: ChatHistory, 
+        query: str,
         kb_results:Iterable[Optional[Dict[str, Any]]] | None, 
         web_results:Dict[str, Dict[str, Any]] | None,
         stream:bool = False)->AsyncGenerator[list[StreamingContentMixin] | FunctionResult | list[FunctionResult], Any] | str:
@@ -64,14 +63,14 @@ class KernelRepository(KernelRepositoryBase):
                                    knowledge_base=kb_results,
                                    web_search=web_results)
             if stream:
-                return self._ask_stream(args)
+                return self.__ask_stream_async(args)
             
-            return str(await self._ask(args))
+            return str(await self.__ask_async(args))
         
         except Exception as e:
             raise e
         
-    async def breakdown_query(self, query:str, chat_history: ChatHistory) -> str:
+    async def breakdown_query_async(self, query:str, chat_history: ChatHistory) -> str:
         """
         Breaking down query into smaller queries.
         """
@@ -79,23 +78,23 @@ class KernelRepository(KernelRepositoryBase):
             args = KernelArguments()
             args["query"] = query
             args["history"] = chat_history
-            result = await self._breakdown_query(args)
+            result = await self.__breakdown_query_async(args)
             return str(result)
         except Exception as e:
             raise e
     
-    async def regenerate_query(self, query:str, chat_history: ChatHistory) -> str:
+    async def regenerate_query_async(self, query:str, chat_history: ChatHistory) -> str:
         """
         Regenerate the query based on the conversation history.
         """
         try:
-            result = await self._regenerate_query(KernelArguments(query=query,
+            result = await self.__regenerate_query_async(KernelArguments(query=query,
                                    history=chat_history))
             return str(result)
         except Exception as e:
             raise e
         
-    async def check_history(self, query:str, chat_history: ChatHistory) -> str:
+    async def check_history_async(self, query:str, chat_history: ChatHistory) -> str:
         """
         Check the conversation history.
         """
@@ -103,38 +102,56 @@ class KernelRepository(KernelRepositoryBase):
             args = KernelArguments()
             args["history"] = chat_history
             args["query"] = query
-            result = await self._check_history(args)
+            result = await self.__check_history_async(args)
             return str(result)
         except Exception as e:
             raise e
-    async def _check_history(self, args: KernelArguments) -> FunctionResult:
+    async def __check_history_async(self, args: KernelArguments) -> FunctionResult:
         """
-        Check the conversation history.
+        Asynchronously checks the conversation history using the orchestrator plugin.
+
+        Args:
+            args (KernelArguments): Arguments containing history and query.
+
+        Returns:
+            FunctionResult: The result of the history check.
         """
         try:
             return await self.__kernel.invoke(self.__orchestrator['CheckHistory'], args)
         except Exception as e:
             raise e
     
-    async def _regenerate_query(self, args: KernelArguments) -> FunctionResult:
+    async def __regenerate_query_async(self, args: KernelArguments) -> FunctionResult:
         """
-        Regenerate the query based on the conversation history.
+        Asynchronously regenerates the query using the QueryStructuringPlugin.
+
+        Args:
+            args (KernelArguments): Arguments containing query and history.
+
+        Returns:
+            FunctionResult: The regenerated query result.
         """
         try:
             return await self.__kernel.invoke(self.__query_plugin['RegenerateQuery'], args)
         except Exception as e:
             raise e
     
-    async def _breakdown_query(self, args: KernelArguments) -> FunctionResult:
+    async def __breakdown_query_async(self, args: KernelArguments) -> FunctionResult:
         """
-        Breaking down query into smaller queries.
+        Asynchronously breaks down the query into smaller queries using the QueryStructuringPlugin.
+
+        Args:
+            args (KernelArguments): Arguments containing query and history.
+
+        Returns:
+            FunctionResult: The breakdown result.
         """
         try:
             return await self.__kernel.invoke(self.__query_plugin['BreakDownQuery'], args)
         except Exception as e:
             raise e
     
-    async def _ask(
+    async def __ask_async(
         self, 
         args: "KernelArguments") -> FunctionResult:
         try:
@@ -142,7 +159,7 @@ class KernelRepository(KernelRepositoryBase):
         except Exception as e:
             raise e
 
-    def _ask_stream(
+    def __ask_stream_async(
         self, 
         args: "KernelArguments") -> AsyncGenerator[list["StreamingContentMixin"] | FunctionResult | list[FunctionResult], Any]:
         try:

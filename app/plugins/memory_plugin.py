@@ -26,34 +26,49 @@ class GeorgeMemoryPlugin:
       query: Annotated[str, "the query used to retrieve memory."],
       kernel: Annotated["Kernel", "The kernel instance."]
     ):
-        """ Recall a memory from knowledge base/long term memory 
+        """
+        Recall a memory from the knowledge base or long-term memory.
+
+        Args:
+            query (str): The query used to retrieve memory.
+            kernel (Kernel): The kernel instance.
+
+        Returns:
+            str: JSON-encoded list of unique knowledge base results.
         """
         try:
+            # Get the function to recompose the query
             re_query_func = kernel.get_function("QueryStructuringPlugin", "RecomposeQuery")
             
+            # Invoke the function and parse the recomposed queries
             queries_dict:dict = json.loads(str(await kernel.invoke(re_query_func,KernelArguments(query=query))))
             queries = queries_dict['recomposed_queries']
             
+            # Search the knowledge base for each recomposed query
             kb_results = await asyncio.gather(*(self.__memory_service.search_kb(query) for query in queries))
                     
-            # Remove duplicates by using frozenset or hashable structure for uniqueness
+            # Remove duplicates by title and timestamp
             kb_results = self.__filter_unique_by_title_and_timestamp(kb_results)
-            
-            # logger.warning(
-            #     [kb_result.model_dump() for kb_result in kb_results]
-            # )
             
             return json.dumps([kb_result.model_dump() for kb_result in kb_results])
         
-
         except Exception as e:
             logger.error(f"Error retrieving KB results: {e}")
-            return []  # Or handle accordingly
+            return []  # Return empty list on error
         
     def __filter_unique_by_title_and_timestamp(
         self,
         results: List[PodCastKnowledgeBaseModel]
     ) -> List[PodCastKnowledgeBaseModel]:
+        """
+        Filter results to ensure uniqueness by podcast title and timestamp.
+
+        Args:
+            results (List[PodCastKnowledgeBaseModel]): List of knowledge base results.
+
+        Returns:
+            List[PodCastKnowledgeBaseModel]: Unique results.
+        """
         seen: Set[Tuple[str, str]] = set()
         unique_results: List[PodCastKnowledgeBaseModel] = []
 

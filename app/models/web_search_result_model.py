@@ -8,7 +8,6 @@ class WebSearchResultRef(BaseModel):
     link:str
     snippet:str
 
-
 class OrganicResult(BaseModel):
     answer:str
     references: Optional[List[WebSearchResultRef]]

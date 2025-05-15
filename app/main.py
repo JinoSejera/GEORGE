@@ -27,25 +27,35 @@ load_dotenv()
 
 app = FastAPI(title="GEORGE API", version="0.1.0")
 
-#rate Limiting
+# Rate limiting setup using SlowAPI limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-#CORS
+# CORS middleware configuration to allow all origins and methods
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://esejera-projects.azurewebsites.net/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )
 
-# Initialize Singleton 
+# Initialize singleton instances for repositories
 KernelRepository()
 KnowledgeBaseRepository()
 
 @app.middleware("http")
 async def log_request(request: Request, call_next):
+    """
+    Middleware to log each HTTP request with client IP and processing time.
+
+    Args:
+        request (Request): The incoming HTTP request.
+        call_next (function): The next middleware or route handler.
+
+    Returns:
+        Response: The HTTP response.
+    """
     start_time = time.time()
     client_ip = get_client_ip(request)
     logger.info(f"Request from {client_ip} to {request.url}")
@@ -63,6 +73,16 @@ async def log_request(request: Request, call_next):
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Global exception handler to catch unhandled exceptions and return a 500 response.
+
+    Args:
+        request (Request): The incoming HTTP request.
+        exc (Exception): The exception that was raised.
+
+    Returns:
+        JSONResponse: The error response.
+    """
     logger.error(f"Unhandled exception: {exc}")
     return JSONResponse(
         status_code=500,

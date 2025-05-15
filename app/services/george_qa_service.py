@@ -1,11 +1,9 @@
 import logging
 import json
-from typing import List, Iterable, Any, Dict, Optional, Tuple
 import asyncio
-import ast
+from typing import Optional, Any, Dict, Tuple
 
 from semantic_kernel.contents import ChatHistory
-from semantic_kernel.functions import KernelArguments
 
 from ..services.knowledge_base_service import KnowledgeBaseService 
 from ..models.knowledge_base_model import PodCastKnowledgeBaseModel
@@ -16,6 +14,9 @@ from ..connectors.search_engine.bing_serapi_connector import SearchConnectorBase
 logger = logging.getLogger(__name__)
 
 class GeorgeQAService:
+    """
+    Service for handling Q&A logic using knowledge base, web search, and chat history.
+    """
     __kernel: "KernelRepositoryBase"
     __memory_service: "KnowledgeBaseService"
     __search_connector: "SearchConnectorBase"
@@ -23,16 +24,34 @@ class GeorgeQAService:
     def __init__(self, kernel: KernelRepositoryBase, 
                  memory_service: KnowledgeBaseService,
                  search_connector: SearchConnectorBase) -> None:
+        """
+        Initialize the GeorgeQAService with kernel, memory service, and search connector.
+
+        Args:
+            kernel (KernelRepositoryBase): The kernel repository instance.
+            memory_service (KnowledgeBaseService): The knowledge base service.
+            search_connector (SearchConnectorBase): The web search connector.
+        """
         self.__kernel = kernel
         self.__memory_service = memory_service
         self.__search_connector = search_connector
         
     async def ask_async(self,query:str, chat_history:ChatHistory):
+        """
+        Answer a question using knowledge base and web search.
+
+        Args:
+            query (str): The user query.
+            chat_history (ChatHistory): The conversation history.
+
+        Returns:
+            Tuple: (response, kb_results, web_search_results)
+        """
         try:
             
-            kb_results, web_search_results = await self._get_information_async(query, chat_history)
+            kb_results, web_search_results = await self.__get_information_async(query, chat_history)
             
-            george_response = await self.__kernel.ask(query, chat_history, kb_results, web_search_results)
+            george_response = await self.__kernel.ask_async(query, chat_history, kb_results, web_search_results)
             
             web_search_results = WebSearchResult(**web_search_results)
             kb_results = [
@@ -45,12 +64,22 @@ class GeorgeQAService:
             logger.error(f"Encountered Error: {e}")
             raise e
         
-    async def ask_streaming_async(self,query:str, chat_history:ChatHistory):
+    async def ask_streaming_async(self, query:str, chat_history:ChatHistory):
+        """
+        Stream the answer to a question in chunks.
+
+        Args:
+            query (str): The user query.
+            chat_history (ChatHistory): The conversation history.
+
+        Yields:
+            str: Chunks of the response or final response JSON.
+        """
         try:
             # Streaming response content
             message_accumulator = ""
             
-            result_from_history = await self.__kernel.check_history(query, chat_history)
+            result_from_history = await self.__kernel.check_history_async(query, chat_history)
             
             if result_from_history.lower() != "no answer":
                 logger.warning(f"Agent Response - result from history: {result_from_history}")
@@ -60,15 +89,15 @@ class GeorgeQAService:
                     # logger.warning(f"Chunk: {chunk}")
                     await asyncio.sleep(0.1)
 
-                chat_history = self._add_to_chat_history(chat_history, query, result_from_history)
-                final_response = self._final_response(message = message_accumulator.strip(), chat_history=chat_history)
+                chat_history = self.__add_to_chat_history(chat_history, query, result_from_history)
+                final_response = self.__final_response(message = message_accumulator.strip(), chat_history=chat_history)
                 
                 await asyncio.sleep(0.1)  # ensure async yield
                 yield f"\n<|END_OF_RESPONSE|>\n{json.dumps(final_response)}"
                 logger.info(f"Final Response - result from history: \n<|END_OF_RESPONSE|>\n{json.dumps(final_response)}")
                 return  # 🚨 Important: do not continue to OpenAI call!
             
-            kb_results, web_search_results = await self._get_information_async(query, chat_history)
+            kb_results, web_search_results = await self.__get_information_async(query, chat_history)
             
             if not kb_results or len(kb_results) == 0:
                 fallback_message = "I am sorry, but I do not have enough information to answer that."
@@ -81,14 +110,14 @@ class GeorgeQAService:
                 
                 # add the user query and assistant response to the chat history
                 # This is done by the ChatHistoryService in the kernel.
-                chat_history = self._add_to_chat_history(chat_history, query, fallback_message)
-                final_response = self._final_response(message = message_accumulator, chat_history=chat_history)
+                chat_history = self.__add_to_chat_history(chat_history, query, fallback_message)
+                final_response = self.__final_response(message = message_accumulator, chat_history=chat_history)
                 
                 await asyncio.sleep(0.1)  # ensure async yield
                 yield f"\n<|END_OF_RESPONSE|>\n{json.dumps(final_response)}"
                 return  # 🚨 Important: do not continue to OpenAI call!
             
-            result = await self.__kernel.ask(query, chat_history, kb_results, web_search_results, stream=True)
+            result = await self.__kernel.ask_async(query, kb_results, web_search_results, stream=True)
         
             async for chunk in result:
                 message_accumulator += str(chunk[0])
@@ -98,9 +127,9 @@ class GeorgeQAService:
             
             # add the user query and assistant response to the chat history
             # This is done by the ChatHistoryService in the kernel.
-            chat_history = self._add_to_chat_history(chat_history, query, message_accumulator)
+            chat_history = self.__add_to_chat_history(chat_history, query, message_accumulator)
             logger.info(f"Agent Response - using RAG: {message_accumulator}")
-            final_response = self._final_response(message_accumulator, kb_results, web_search_results, chat_history)
+            final_response = self.__final_response(message_accumulator, kb_results, web_search_results, chat_history)
             # Yield the final JSON string to client
             yield f"\n<|END_OF_RESPONSE|>\n{json.dumps(final_response)}"
             
@@ -108,21 +137,38 @@ class GeorgeQAService:
             logger.error(f"Encountered Error: {e}")
             raise e
     
-    def _add_to_chat_history(self, chat_history:ChatHistory, user_query:str, assistant_response:str) -> ChatHistory:
+    def __add_to_chat_history(self, chat_history:ChatHistory, user_query:str, assistant_response:str) -> ChatHistory:
         """
         Add the user query and assistant response to the chat history.
+
+        Args:
+            chat_history (ChatHistory): The conversation history.
+            user_query (str): The user's query.
+            assistant_response (str): The assistant's response.
+
+        Returns:
+            ChatHistory: Updated chat history.
         """
         chat_history.add_user_message(user_query)
         chat_history.add_assistant_message(assistant_response)
         return chat_history
     
-    def _final_response(self, 
+    def __final_response(self, 
                         message:str, 
                         kb_results:list[Dict[str, Any] | None] = [], 
                         web_search_results: Any | Dict[str, Dict[str, Any]] = {}, 
                         chat_history:ChatHistory = None) -> dict[str, Any]:
         """
         Create the final response dictionary to be returned to the client.
+
+        Args:
+            message (str): The response message.
+            kb_results (list, optional): Knowledge base results.
+            web_search_results (dict, optional): Web search results.
+            chat_history (ChatHistory, optional): The conversation history.
+
+        Returns:
+            dict: The response dictionary.
         """
         return {
             "name": "George",
@@ -132,22 +178,24 @@ class GeorgeQAService:
             "chat_history": chat_history.to_prompt() if chat_history else None
         }
     
-    async def _get_information_async(self, query:str, chat_history:ChatHistory):
-        
+    async def __get_information_async(self, query:str, chat_history:ChatHistory):
+        """
+        Get information from knowledge base and web search.
+
+        Args:
+            query (str): The user query.
+            chat_history (ChatHistory): The conversation history.
+
+        Returns:
+            Tuple: (kb_results, web_search_results)
+        """
         # Break down the query into smaller queries for better results
         # This is done by the QueryStructuringPlugin in the kernel.
         re_queries = await self.breakdown_query_async(query,chat_history)
         
-        # re_queries, re_generate_query = await asyncio.gather(re_queries_task, re_generate_query_task)
-        # logger.warning(f"Re-composed queries: {re_queries}\nRe-generated query: {re_generate_query}")
-        
         # Retrieve stored knowledge base results for each re-composed query
         # This is done by the KnowledgeBaseService in the kernel.
-        kb_results = await asyncio.gather(*(self.__memory_service.search_kb(query) for query in re_queries['recomposed_queries']))
-
-        
-        # Run KB search and web search in parallel
-        # kb_results, web_search_results = await asyncio.gather(kb_task, web_search_task)
+        kb_results = await asyncio.gather(*(self.__memory_service.search_kb_async(query) for query in re_queries['recomposed_queries']))
 
         # Remove duplicates using (podcast_title, time_stamp) as the unique key
         if(kb_results):
@@ -168,7 +216,7 @@ class GeorgeQAService:
                 re_generate_query = await self.regenerate_query_async(query, chat_history)
                 # Perform web search using the Bing web search API
                 # This is done by the WebSearchEnginePlugin in the kernel.
-                web_search_results = await self.__search_connector.search(re_generate_query, num_results=3)
+                web_search_results = await self.__search_connector.search_async(re_generate_query, num_results=3)
                 logger.info(f"Web Search Results: {web_search_results}")
         
         ## Convert the results to the appropriate models
@@ -178,15 +226,35 @@ class GeorgeQAService:
         return kb_results, web_search_results
             
     async def breakdown_query_async(self, query:str, chat_history:ChatHistory)-> dict[str, str]:
+        """
+        Break down a query into sub-queries using the kernel.
+
+        Args:
+            query (str): The user query.
+            chat_history (ChatHistory): The conversation history.
+
+        Returns:
+            dict: The breakdown result.
+        """
         try:
-            return json.loads((await self.__kernel.breakdown_query(query,chat_history)))
+            return json.loads((await self.__kernel.breakdown_query_async(query,chat_history)))
         except Exception as e:
             logger.error(f"Encountered Error: {e}")
             raise e
         
     async def regenerate_query_async(self, query:str, chat_history:ChatHistory)-> str:
+        """
+        Regenerate the query for web search using the kernel.
+
+        Args:
+            query (str): The user query.
+            chat_history (ChatHistory): The conversation history.
+
+        Returns:
+            str: The regenerated query.
+        """
         try:
-            return await self.__kernel.regenerate_query(query,chat_history)
+            return await self.__kernel.regenerate_query_async(query,chat_history)
         except Exception as e:
             logger.error(f"Encountered Error: {e}")
             raise e
