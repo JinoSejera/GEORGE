@@ -32,16 +32,19 @@ app = FastAPI(title="GEORGE API", version="0.1.0")
 environment = os.getenv("ENVIRONMENT", "production")
 logger.info(f"Environment: {environment}")
 
-if environment == "development":
+if environment == "production":
     cors_origins = os.getenv("CORS_ORIGINS", "")
     allowed_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=allowed_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"]
-    )
+else:
+    allowed_origins = ["*"]
+        
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 # Rate limiting setup using SlowAPI limiter
 app.state.limiter = limiter
