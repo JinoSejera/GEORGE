@@ -27,17 +27,14 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 environment = os.getenv("ENVIRONMENT", "production")
+cors_origins = os.getenv("CORS_ORIGINS", "")
 logger.info(f"Environment: {environment}")
 
 # -------------------- FastAPI App Initialization --------------------
 app = FastAPI(title="GEORGE API", version="0.1.0")
 
 # -------------------- CORS Configuration --------------------
-if environment == "production":
-    cors_origins = os.getenv("CORS_ORIGINS", "")
-    allowed_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
-else:
-    allowed_origins = ["*"]
+allowed_origins = ["*"] if environment == "development" else [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
