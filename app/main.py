@@ -34,7 +34,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # CORS middleware configuration to allow all origins and methods
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://esejera-projects.azurewebsites.net/"],
+    allow_origins=["https://esejera-projects.azurewebsites.net"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
