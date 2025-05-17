@@ -26,8 +26,6 @@ async def ask_streaming(
     request_body: RequestBody,
     george_service: GeorgeQAService = Depends(get_george_ask_service),
     history: ChatHistoryService = Depends(get_chat_history),
-    # Security is enforced here; invalid API keys will raise HTTP 403 before entering the endpoint
-    api_key: str = Depends(get_api_key)
 ) -> StreamingResponse:
     """
     Handles a streaming Q&A request to George. Streams the response as server-sent events.
