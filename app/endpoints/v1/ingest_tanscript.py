@@ -4,6 +4,8 @@ from fastapi import APIRouter,HTTPException, Request, Depends
 
 from ...services.knowledge_base_service import KnowledgeBaseService
 from ...dependencies import get_knowledge_base_service
+from ...utils.security import get_api_key
+
 
 api = "George API Q&A"
 logger = logging.getLogger(__name__)
@@ -13,6 +15,7 @@ router = APIRouter(prefix="/api/v1/ingest")
 async def ingest(
     request:Request,
     kb_service: KnowledgeBaseService = Depends(get_knowledge_base_service),
+    api_key: str = Depends(get_api_key)
 ):
     """
     Endpoint to ingest transcripts into the knowledge base.

@@ -72,6 +72,15 @@ async def log_request(request: Request, call_next):
     logger.info(f"Request from {client_ip} processed in {process_time:.4f} seconds")
     return response
 
+@app.middleware("http")
+async def check_origin(request: Request, call_next):
+    origin = request.headers.get("origin")
+    if origin and origin not in allowed_origins:
+        return JSONResponse(status_code=403, content={"detail": "Invalid origin"})
+    
+    return await call_next(request)
+   
+
 # -------------------- Global Exception Handler --------------------
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
