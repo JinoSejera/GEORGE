@@ -1,12 +1,9 @@
 from pydantic import BaseModel
-from typing import Optional, List
-
-from .knowledge_base_model import PodCastKnowledgeBaseModel
-from .web_search_result_model import WebSearchResult
+from typing import Dict, List, Any
 
 class ResponseBody(BaseModel):
     name:str
     message:str
-    kb_results: Optional[List[PodCastKnowledgeBaseModel]] = []
-    web_search_results: WebSearchResult
+    kb_results: List[Dict[str, Any] | None]
+    web_search_results: Any | Dict[str, Dict[str, Any]]
     chat_history:str

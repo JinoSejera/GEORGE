@@ -36,34 +36,6 @@ class GeorgeQAService:
         self.__memory_service = memory_service
         self.__search_connector = search_connector
         
-    async def ask_async(self,query:str, chat_history:ChatHistory):
-        """
-        Answer a question using knowledge base and web search.
-
-        Args:
-            query (str): The user query.
-            chat_history (ChatHistory): The conversation history.
-
-        Returns:
-            Tuple: (response, kb_results, web_search_results)
-        """
-        try:
-            
-            kb_results, web_search_results = await self.__get_information_async(query, chat_history)
-            
-            george_response = await self.__kernel.ask_async(query, chat_history, kb_results, web_search_results)
-            
-            web_search_results = WebSearchResult(**web_search_results)
-            kb_results = [
-                PodCastKnowledgeBaseModel(**kb_result) for kb_result in kb_results
-            ] if kb_results else None
-            
-            return george_response, kb_results, web_search_results
-        
-        except Exception as e:
-            logger.error(f"Encountered Error: {e}")
-            raise e
-        
     async def ask_streaming_async(self, query:str, chat_history:ChatHistory):
         """
         Stream the answer to a question in chunks.

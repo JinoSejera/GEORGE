@@ -18,49 +18,6 @@ api = "George API Q&A"
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/askgeorge")
 
-@router.post('/ask',tags=[api], response_model=ResponseBody)
-@limiter.limit("5/hour")
-async def ask(
-    request:Request,
-    request_body:RequestBody,
-    george_service: GeorgeQAService = Depends(get_george_ask_service),
-    history: ChatHistoryService = Depends(get_chat_history)
-):
-    """
-    Handles a Q&A request to George. Processes the query, updates chat history, and returns the response.
-
-    Args:
-        request (Request): The incoming HTTP request.
-        request_body (RequestBody): The request payload containing the query and chat history.
-        george_service (GeorgeQAService): Service for handling Q&A logic.
-        history (ChatHistoryService): Service for managing chat history.
-
-    Returns:
-        ResponseBody: The response containing the answer, chat history, and search results.
-    """
-    try:
-        # Load or initialize chat history
-        chat_history:ChatHistory = history.load_chat_history(request_body.chat_history) if request_body.chat_history else ChatHistory()
-        
-        # Get response and results from the service
-        response, kb_results, web_search_results = await george_service.ask_async(request_body.query, chat_history)
-        
-        # Update chat history with user and assistant messages
-        chat_history.add_user_message(request_body.query)
-        chat_history.add_assistant_message(response)
-        
-        return ResponseBody(
-            name="George",
-            message=response, 
-            chat_history=history.get_chat_history(chat_history), 
-            kb_results=kb_results, 
-            web_search_results=web_search_results
-        )
-
-    except Exception as e:
-        logger.error(f"Failed to process query: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to process query: {e}")
-
 @router.post('/ask/stream',tags=[api])
 @limiter.limit("5/hour")
 async def ask_streaming(
